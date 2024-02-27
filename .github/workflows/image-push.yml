@@ -1,0 +1,36 @@
+on:
+  release:
+    types: [published]
+
+jobs:
+  push-amd64:
+    strategy:
+      matrix:
+        goarch: [amd64] #arm64 not yet fully supported in upstream Github Actions
+        os: [ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Check out code into the Go module directory
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Use the value
+        id: step_two
+        run: |
+          printf '%s\n' "${{ github.event.release.tag_name }}"
+
+#      - name: Login to Container Registry
+#        uses: docker/login-action@v3
+#        with:
+#          username: ${{ secrets.docker_username }}
+#          password: ${{ secrets.docker_password }}
+
+      - name: Build container image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: rancher/hardened-flannel:${{ github.event.release.tag_name }}
+          file: Dockerfile

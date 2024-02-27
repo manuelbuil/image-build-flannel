@@ -1,0 +1,35 @@
+on: [push, pull_request]
+name: Build
+jobs:
+  build:
+    strategy:
+      matrix:
+        goarch: [amd64] #arm64 not yet fully supported in upstream Github Actions
+        os: [ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set the TAG value
+      id: get-TAG
+      run: |
+        echo "$(make -s log | grep TAG)" >> "$GITHUB_ENV"
+
+    - name: Build container image
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        push: false
+        tags: rancher/hardened-flannel:${{ env.TAG }}
+        file: Dockerfile
+
+    - name: Run Trivy vulnerability scanner
+      uses: aquasecurity/trivy-action@0.18.0
+      with:
+        image-ref: rancher/hardened-flannel:${{ env.TAG }}
+        format: 'table'
+        exit-code: '1'
+        ignore-unfixed: true
+        vuln-type: 'os,library'
+        severity: 'CRITICAL,HIGH'

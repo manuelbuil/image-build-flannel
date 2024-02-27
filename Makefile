@@ -17,13 +17,20 @@ SRC ?= github.com/flannel-io/flannel
 TAG ?= v0.24.2$(BUILD_META)
 K3S_ROOT_VERSION ?= v0.13.0
 
-ifneq ($(DRONE_TAG),)
-	TAG := $(DRONE_TAG)
+ifeq (,$(filter %$(BUILD_META),$(TAG)))
+$(error TAG ${TAG} needs to end with build metadata: $(BUILD_META))
 endif
 
-ifeq (,$(filter %$(BUILD_META),$(TAG)))
-$(error TAG needs to end with build metadata: $(BUILD_META))
-endif
+.PHONY: log
+log:
+	@echo "ARCH=$(ARCH)"
+	@echo "TAG=$(TAG)"
+	@echo "ORG=$(ORG)"
+	@echo "PKG=$(PKG)"
+	@echo "SRC=$(SRC)"
+	@echo "BUILD_META=$(BUILD_META)"
+	@echo "K3S_ROOT_VERSION=$(K3S_ROOT_VERSION)"
+	@echo "UNAME_M=$(UNAME_M)"
 
 .PHONY: image-build
 image-build:
